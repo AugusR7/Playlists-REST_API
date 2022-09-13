@@ -1,0 +1,44 @@
+{
+  [
+    {
+      "name":"Lista 1",
+      "canciones":[
+         {
+            "title":"cancion 1",
+            "artist":"artista 1",
+            "album":"album 1"
+         },
+         {
+            "title":"cancion 2",
+            "artist":"artista 7",
+            "album":"album 3"
+         },
+         {
+            "title":"cancion 3",
+            "artist":"artista 2",
+            "album":"album 5"
+         }
+      ]
+    },
+    {
+      "name":"Lista 2",
+      "canciones":[
+         {
+            "title":"cancion 4",
+            "artist":"artista 1",
+            "album":"album 1"
+         },
+         {
+            "title":"cancion 5",
+            "artist":"artista 7",
+            "album":"album 3"
+         },
+         {
+            "title":"cancion 6",
+            "artist":"artista 2",
+            "album":"album 5"
+         }
+      ]
+    }
+  ]
+}
