@@ -2,7 +2,8 @@ var express = require('express');
 var app = express();
 var port = 3000;
 
-var datos = 
+// ------------------------- Esquema pre armado ------------------------- //
+var mockDatosDePrueba = 
 {
 	"playlists":[
 		{
@@ -47,36 +48,55 @@ var datos =
 		}
 	]
 };
+// -------------------------   Esquema vacío   ------------------------- //
+var datos = {
+	"playlists":[]
+};
 
+// ------------------------- Inicialización ------------------------- //
 app.listen(port, ()=>{
     console.log("Servidor corriendo en el puerto "+port+"\n");
 }); 
 
+// ------------------------- Obtención ------------------------- //
+
 app.get("/obtenerListas", (req, res)=> {
+	console.log("[OL ] >> Se envió: "+JSON.stringify(datos.playlists));
     res.send(datos.playlists);
 });
+
+// ------------------------- Creación ------------------------- //
 
 app.post("/crearLista", (req, res) => {
 	var nombreLista = req.headers.nombrelista;
 	var lista = {"name":nombreLista, "canciones":[]};
 	datos.playlists.push(lista);
-	console.log("Se creó la lista: "+JSON.stringify(lista));
-	res.send(datos.playlists);
-}); // Se crea bajo un nombre dado, sin canciones
-	// try{ req.headers.nombreLista != undefined }
+	console.log("[CL ] >> Se creó la lista: "+lista.name);
+	res.send(datos);
+});
+
+// ------------------------- Modificación ------------------------- //
+// En diversos encabezados, se denomina a las funciones con el subfijo "J" 
+// para hacer referencia a que trabaja recibiendo un objeto JSON, y no parametros
 
 app.post("/agregarCancionJ", (req, res) => {
 	var nombreLista = req.headers.nombrelista;
 	var cancion = JSON.parse(req.headers.cancion);
-	var i = 0, index = 0, flag = 0;
+	var i = 0, index = -1, flag = 0;
 	while( (i < datos.playlists.length) && (flag == 0) ){
 		if(datos.playlists[i].name === nombreLista) {index = i; flag = 1};
 		i++;
 	};
-	datos.playlists[index].canciones.push(cancion);
-	console.log("Se agregó la cancion:"+JSON.stringify(cancion)+"a la lista: "+nombreLista);
+
+	if(index > -1){
+		datos.playlists[index].canciones.push(cancion);
+		console.log("[ACj] >> Se agregó la cancion:"+cancion.title+" a la lista: "+nombreLista);
+	} 
+	else {
+		console.log(">> [ACj] No se encontró la lista a la cual se quiere agregar.");
+	}
 	res.send(datos.playlists);
-}); // Se agrega una canción a una lista dada. Si la lista no se encuentra, retorna un error.
+});
 
 app.post("/agregarCancion", (req, res) => {
 	var nombreLista = req.headers.nombrelista;
@@ -85,13 +105,18 @@ app.post("/agregarCancion", (req, res) => {
 	var album = req.headers.album;
 	
 	var cancion = {"title": titulo, "artist":artista, "album":album};
-	var i = 0, index = 0, flag = 0;
+	var i = 0, index = -1, flag = 0;
 	while( (i < datos.playlists.length) && (flag == 0) ){
 		if(datos.playlists[i].name === nombreLista) {index = i; flag = 1};
 		i++;
 	};
-	datos.playlists[index].canciones.push(cancion);
-	console.log("Se agregó la cancion:"+JSON.stringify(cancion)+"a la lista: "+nombreLista);
+	if( index > -1){
+		datos.playlists[index].canciones.push(cancion);
+		console.log("[AC ] >> Se agregó la cancion:"+cancion.title+" a la lista: "+nombreLista);
+	} 
+	else {
+		console.log(">> [AC ] No se encontró la lista a la cual se quiere agregar.");
+	}
 	res.send(datos.playlists);
 });
 
@@ -102,7 +127,7 @@ app.post("/eliminarCancion", (req, res) => {
 	var album = req.headers.album;
 	var cancion = {"title": titulo, "artist":artista, "album":album};
 
-	var i = 0, index = 0, flag = 0;
+	var i = 0, index = -1, flag = 0;
 	while( (i < datos.playlists.length) && (flag == 0) ){
 		if(datos.playlists[i].name === nombreLista) {
 			index = i; 
@@ -113,18 +138,17 @@ app.post("/eliminarCancion", (req, res) => {
 	};
 	if( songPosition > -1 ) {
 		datos.playlists[index].canciones.splice(songPosition,1);
-		console.log("Se eliminó la cancion: \n\t"+JSON.stringify(cancion)+" \nde la lista: \""+nombreLista+"\"");
+		console.log("[EC ] >> Se eliminó la cancion: "+cancion.title+" de la lista: \""+nombreLista+"\"");
 	} else {
-		console.log("No se encontró la cancion dentro de la lista.");
+		console.log(">> [EC] No se pudo eliminar la canción porque no se encontró la cancion dentro de la lista.");
 	}
 	res.send(datos.playlists);
 });
 
 app.post("/eliminarCancionJ", (req, res) => {
 	var nombreLista = req.headers.nombrelista;
-	var cancion = req.headers.cancion;
-
-	var i = 0, index = 0, flag = 0;
+	var cancion = JSON.parse(req.headers.cancion);
+	var i = 0, index = -1, flag = 0;
 	while( (i < datos.playlists.length) && (flag == 0) ){
 		if(datos.playlists[i].name === nombreLista) {
 			index = i; 
@@ -135,14 +159,39 @@ app.post("/eliminarCancionJ", (req, res) => {
 	};
 	if( songPosition > -1 ) {
 		datos.playlists[index].canciones.splice(songPosition,1);
-		console.log("Se eliminó la cancion: \n\t"+JSON.stringify(cancion)+" \nde la lista: \""+nombreLista+"\"");
+		console.log("[ECj] >> Se eliminó la cancion: "+cancion.title+" de la lista: \""+nombreLista+"\"");
 	} else {
-		console.log("No se encontró la cancion dentro de la lista.");
+		console.log(">> [ECj] No se pudo eliminar la canción porque no se encontró la cancion dentro de la lista.");
 	}
 	res.send(datos.playlists);
 });
 
-app.post("/buscarCancionEnListas", (req, res) => {
+// ------------------------- Búsqueda ------------------------- //
+
+app.get("/buscarCancionEnListas", (req, res) => {
+	var titulo = req.headers.titulo;
+	var artista = req.headers.artista;
+	var album = req.headers.album;
+
+	var cancion = {"title":titulo, "artist": artista, "album": album};
+	var i = 0, songPosition = -1;
+	var response = {"playlists":[]};
+	while( i < datos.playlists.length){
+		songPosition = findSongIndex(datos.playlists[i].canciones, cancion);
+		if (songPosition > -1 ){
+			response.playlists.push(datos.playlists[i]);
+		}
+		i++;
+	};
+	if( response.playlists.length > 0 ) {
+		console.log("[BC ] >> Se encontró la canción: "+cancion.name+" en las listas,\n");
+	} else {
+		console.log(">> [BC ] No se encontró la cancion dentro de las listas.");
+	}
+	res.send(response);
+});
+
+app.get("/buscarCancionEnListasJ", (req, res) => {
 	var cancion = req.headers.cancion;
 
 	var i = 0, songPosition = -1;
@@ -154,13 +203,16 @@ app.post("/buscarCancionEnListas", (req, res) => {
 		}
 		i++;
 	};
-	if( response.playlists.length>0 ) {
-		console.log("Se encontró la canción: \n\t"+cancion+" \n\nen las listas: \n"+JSON.stringify(response.playlists)+"\n");
+	if( response.playlists.length > 0 ) {
+
+		console.log("[BCj] >> Se encontró la canción: "+cancion.title+" en las listas.\n");
 	} else {
-		console.log("No se encontró la cancion dentro de las listas.");
+		console.log(">> [BCj) No se encontró la cancion dentro de las listas.");
 	}
 	res.send(response);
 });
+
+// ------------------------- Remoción de lista ------------------------- //
 
 app.post("/eliminarLista", (req, res) => {
 	var nombreLista = req.headers.nombrelista;
@@ -174,25 +226,15 @@ app.post("/eliminarLista", (req, res) => {
 		i++;
 	};
 	if(index > -1){
+		console.log("[EL ] >> Se eliminó exitosamente la lista: "+datos.playlists[index].name);
 		datos.playlists.splice(index,1);
 	} else {
-		console.log("No se encontró la lista.");
+		console.log(">> [EL ] No se pudo eliminar porque no se encontró la lista.");
 	}
 	res.send(datos.playlists);
 });
 
-//Agregar una variable constante afuera para guardar la lista.
-
-// const findSongInPlaylist = (playlists, song)=>{
-// 	while( (i < datos.playlists.length) && (flag == 0) ){
-// 		if(datos.playlists[i].name === nombreLista) {
-// 			index = i; 
-// 			flag = 1;
-// 			var songPosition = findSongIndex(datos.playlists[i].canciones, cancion);
-// 		};
-// 		i++;
-// 	};
-// };
+// ------------------------- Funciones Auxiliares ------------------------- //
 
 const findSongIndex = (lista, cancion)=>{
 	var index = -1, i = 0, flag = 0;
